@@ -1,7 +1,6 @@
 package UAS.kelompok7.com
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -12,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.List // Import icon baru
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,7 +21,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -55,9 +54,11 @@ data class BottomNavItem(val label: String, val icon: androidx.compose.ui.graphi
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
+    // Menambahkan item "Grafik" ke navigasi
     val navItems = listOf(
         BottomNavItem("Home", Icons.Default.Home, "home"),
         BottomNavItem("Dashboard", Icons.Default.Info, "dashboard"),
+        BottomNavItem("Grafik", Icons.Default.List, "grafik"), // Menu Baru
         BottomNavItem("Profile", Icons.Default.Person, "profile")
     )
 
@@ -95,6 +96,7 @@ fun MainScreen() {
         NavHost(navController, startDestination = "home", modifier = Modifier.padding(innerPadding)) {
             composable("home") { PageContent("Home", "Selamat Datang di Aplikasi IoT") }
             composable("dashboard") { DashboardScreen() }
+            composable("grafik") { GrafikScreen() } // Route Baru
             composable("profile") { PageContent("Profile", "Anggota Kelompok 7") }
         }
     }
@@ -102,20 +104,16 @@ fun MainScreen() {
 
 @Composable
 fun DashboardScreen() {
-    // --- STATES ---
+    // --- STATES DASHBOARD ---
     var isLedOn by remember { mutableStateOf(false) }
-    var isMonitoringActive by remember { mutableStateOf(false) } // State Tombol Monitor
+    var isMonitoringActive by remember { mutableStateOf(false) }
     var distanceValue by remember { mutableStateOf("0.0") }
     var connectionStatus by remember { mutableStateOf("Menghubungkan...") }
 
-    // List untuk menyimpan riwayat data (Float)
-    val historyList = remember { mutableStateListOf<Float>() }
-
     val database = Firebase.database("https://uaskelompok7-a8d53-default-rtdb.asia-southeast1.firebasedatabase.app")
     val ledRef = database.getReference("IOT/led")
-    val controlRef = database.getReference("IOT/control/is_active") // Ref Baru
+    val controlRef = database.getReference("IOT/control/is_active")
     val sensorRef = database.getReference("IOT/sensor")
-    val historyRef = database.getReference("IOT/history") // Ref Baru
 
     LaunchedEffect(Unit) {
         // 1. Listener LED
@@ -127,7 +125,7 @@ fun DashboardScreen() {
             override fun onCancelled(error: DatabaseError) {}
         })
 
-        // 2. Listener Status Monitoring (Tombol ON/OFF Sensor).
+        // 2. Listener Status Monitoring
         controlRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 isMonitoringActive = snapshot.getValue(Boolean::class.java) ?: false
@@ -144,28 +142,14 @@ fun DashboardScreen() {
             }
             override fun onCancelled(error: DatabaseError) {}
         })
-
-        // 4. Listener Riwayat Data (Grafik) - Ambil 20 data terakhir
-        historyRef.limitToLast(20).addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                historyList.clear()
-                for (child in snapshot.children) {
-                    val `val` = child.child("val").getValue(Double::class.java)
-                    val valLong = child.child("val").getValue(Long::class.java)
-                    val finalVal = `val`?.toFloat() ?: valLong?.toFloat() ?: 0f
-                    historyList.add(finalVal)
-                }
-            }
-            override fun onCancelled(error: DatabaseError) {}
-        })
     }
 
-    // --- UI ---
+    // --- UI DASHBOARD (Tanpa Grafik) ---
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Dashboard & Grafik", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+        Text("Dashboard Kontrol", fontSize = 22.sp, fontWeight = FontWeight.Bold)
         Text(connectionStatus, fontSize = 12.sp, color = Color.Gray)
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -176,7 +160,7 @@ fun DashboardScreen() {
             ControlCard(title = "LAMPU", isActive = isLedOn) {
                 ledRef.setValue(it)
             }
-            // Card Monitor Sensor (Tombol Baru)
+            // Card Monitor Sensor
             ControlCard(title = "MONITOR JARAK", isActive = isMonitoringActive) {
                 controlRef.setValue(it)
             }
@@ -198,17 +182,45 @@ fun DashboardScreen() {
                 Text("$distanceValue cm", fontSize = 32.sp, fontWeight = FontWeight.Bold)
             }
         }
+    }
+}
 
-        Spacer(modifier = Modifier.height(20.dp))
+@Composable
+fun GrafikScreen() {
+    // --- STATES GRAFIK ---
+    val historyList = remember { mutableStateListOf<Float>() }
 
-        // GRAFIK CANVAS
-        Text("Grafik Riwayat (Realtime)", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-        Spacer(modifier = Modifier.height(8.dp))
+    val database = Firebase.database("https://uaskelompok7-a8d53-default-rtdb.asia-southeast1.firebasedatabase.app")
+    val historyRef = database.getReference("IOT/history")
+
+    LaunchedEffect(Unit) {
+        // Listener Riwayat Data (Grafik) - Ambil 20 data terakhir
+        historyRef.limitToLast(20).addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                historyList.clear()
+                for (child in snapshot.children) {
+                    val `val` = child.child("val").getValue(Double::class.java)
+                    val valLong = child.child("val").getValue(Long::class.java)
+                    val finalVal = `val`?.toFloat() ?: valLong?.toFloat() ?: 0f
+                    historyList.add(finalVal)
+                }
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        })
+    }
+
+    // --- UI GRAFIK ---
+    Column(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text("Grafik Riwayat (Realtime)", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+        Spacer(modifier = Modifier.height(16.dp))
 
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(200.dp)
+                .height(300.dp) // Tinggi grafik sedikit diperbesar agar lebih jelas
                 .background(Color(0xFFF5F5F5), RoundedCornerShape(8.dp))
                 .padding(8.dp)
         ) {
@@ -249,7 +261,6 @@ fun SimpleLineChart(dataPoints: List<Float>) {
         val width = size.width
         val height = size.height
         val maxVal = (dataPoints.maxOrNull() ?: 100f) * 1.2f // Skala atas + 20%
-        val minVal = 0f
 
         val path = Path()
         val stepX = width / (dataPoints.size - 1).coerceAtLeast(1)
