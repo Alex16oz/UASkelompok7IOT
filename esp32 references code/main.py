@@ -7,7 +7,7 @@ import gc  # Import Garbage Collector untuk manajemen memori
 from machine import Pin, time_pulse_us
 
 # --- KONFIGURASI WIFI ---
-WIFI_SSID = "OTT"       # Ganti dengan WiFi Anda
+WIFI_SSID = "OTT"       # Ganti dengan WiFi Anda.
 WIFI_PASS = "asdfghjkl" # Ganti dengan Password Anda
 
 # URL Firebase (Pastikan diakhiri dengan benar)
