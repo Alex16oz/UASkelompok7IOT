@@ -124,30 +124,49 @@ fun DashboardScreen() {
     // State untuk status LED (Hidup/Mati)
     var isLedOn by remember { mutableStateOf(false) }
 
+    // State untuk data Sensor Jarak
+    var distanceValue by remember { mutableStateOf("0.0") }
+
     // State status koneksi
     var isDatabaseReady by remember { mutableStateOf(false) }
     var connectionStatus by remember { mutableStateOf("Menghubungkan ke Asia-Southeast1...") }
 
-    // ===================================================================================
-    // PERBAIKAN PENTING: MENGGUNAKAN URL SPESIFIK ASIA SOUTHEAST
-    // ===================================================================================
     val database = Firebase.database("https://uaskelompok7-a8d53-default-rtdb.asia-southeast1.firebasedatabase.app")
-    val myRef = database.getReference("IOT/led")
+
+    // Referensi untuk LED
+    val ledRef = database.getReference("IOT/led")
+
+    // Referensi untuk Sensor
+    val sensorRef = database.getReference("IOT/sensor")
 
     LaunchedEffect(Unit) {
-        myRef.addValueEventListener(object : ValueEventListener {
+        // Listener untuk LED
+        ledRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val status = snapshot.getValue(Boolean::class.java)
                 isLedOn = status ?: false
                 isDatabaseReady = true
-                connectionStatus = "Terhubung (Asia SE)"
-                Log.d("FIREBASE", "Status LED diterima: $isLedOn")
+                connectionStatus = "Terhubung"
             }
 
             override fun onCancelled(error: DatabaseError) {
                 isDatabaseReady = false
-                connectionStatus = "Error: ${error.message}"
-                Log.e("FIREBASE", "Error Database: ${error.message}")
+                connectionStatus = "Error LED: ${error.message}"
+            }
+        })
+
+        // Listener untuk Sensor Jarak
+        sensorRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                // Mengambil nilai child "distance" dari JSON yang dikirim ESP32
+                val dist = snapshot.child("distance").getValue(Double::class.java)
+                val distInt = snapshot.child("distance").getValue(Long::class.java) // jaga-jaga jika integer
+
+                distanceValue = dist?.toString() ?: distInt?.toString() ?: "0.0"
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("FIREBASE", "Error Sensor: ${error.message}")
             }
         })
     }
@@ -158,7 +177,7 @@ fun DashboardScreen() {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Kontrol Dashboard",
+            text = "Dashboard Monitoring",
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold
         )
@@ -171,29 +190,35 @@ fun DashboardScreen() {
 
         Spacer(modifier = Modifier.height(30.dp))
 
+        // --- CARD KONTROL LED ---
         Card(
             colors = CardDefaults.cardColors(
                 containerColor = if (isLedOn) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
             ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+            modifier = Modifier.width(280.dp)
         ) {
             Column(
                 modifier = Modifier.padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = if (isLedOn) "LAMPU MENYALA" else "LAMPU MATI",
-                    fontSize = 18.sp,
+                    text = "KONTROL LAMPU",
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Bold
                 )
-
-                Spacer(modifier = Modifier.height(15.dp))
-
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = if (isLedOn) "MENYALA" else "MATI",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(10.dp))
                 Switch(
                     checked = isLedOn,
                     onCheckedChange = { checked ->
                         isLedOn = checked
-                        myRef.setValue(checked)
+                        ledRef.setValue(checked)
                     },
                     enabled = isDatabaseReady
                 )
@@ -201,7 +226,39 @@ fun DashboardScreen() {
         }
 
         Spacer(modifier = Modifier.height(20.dp))
-        Text(text = "Mengontrol ESP32 via Internet")
+
+        // --- CARD MONITORING JARAK (BARU) ---
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+            modifier = Modifier.width(280.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "SENSOR ULTRASONIC",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = "$distanceValue cm",
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+                Spacer(modifier = Modifier.height(5.dp))
+                Text(
+                    text = "Jarak Terukur",
+                    fontSize = 12.sp
+                )
+            }
+        }
     }
 }
 
