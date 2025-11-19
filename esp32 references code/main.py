@@ -6,8 +6,10 @@ import machine
 from machine import Pin, time_pulse_us
 
 # --- USER CONFIGURATION ---
-WIFI_SSID = "POLINEMA"
-WIFI_PASS = "polinemajoss"
+#WIFI_SSID = "POLINEMA"
+#WIFI_PASS = "polinemajoss"
+WIFI_SSID = "OTT"
+WIFI_PASS = "asdfghjkl"
 
 # URL Firebase
 FIREBASE_BASE_URL = "https://uaskelompok7-a8d53-default-rtdb.asia-southeast1.firebasedatabase.app/IOT"
