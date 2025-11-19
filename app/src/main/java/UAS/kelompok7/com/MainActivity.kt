@@ -127,7 +127,7 @@ fun DashboardScreen() {
             override fun onCancelled(error: DatabaseError) {}
         })
 
-        // 2. Listener Status Monitoring (Tombol ON/OFF Sensor)
+        // 2. Listener Status Monitoring (Tombol ON/OFF Sensor).
         controlRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 isMonitoringActive = snapshot.getValue(Boolean::class.java) ?: false
