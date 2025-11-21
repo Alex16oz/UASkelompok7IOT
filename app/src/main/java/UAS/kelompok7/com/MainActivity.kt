@@ -35,6 +35,7 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import UAS.kelompok7.com.ui.theme.UASkelompok7IOTTheme
+import androidx.compose.ui.tooling.preview.Preview
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -296,3 +297,12 @@ fun PageContent(title: String, description: String) {
         Text(description)
     }
 }
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun MainScreenPreview() {
+    UASkelompok7IOTTheme {
+        MainScreen()
+    }
+}
+
