@@ -4,23 +4,16 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.List // Import icon baru
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -35,6 +28,7 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import UAS.kelompok7.com.ui.theme.UASkelompok7IOTTheme
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.ui.tooling.preview.Preview
 
 class MainActivity : ComponentActivity() {
@@ -55,11 +49,10 @@ data class BottomNavItem(val label: String, val icon: androidx.compose.ui.graphi
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
-    // Menambahkan item "Grafik" ke navigasi
     val navItems = listOf(
         BottomNavItem("Home", Icons.Default.Home, "home"),
         BottomNavItem("Dashboard", Icons.Default.Info, "dashboard"),
-        BottomNavItem("Grafik", Icons.Default.List, "grafik"), // Menu Baru
+        BottomNavItem("Grafik", Icons.Default.Menu, "grafik"),
         BottomNavItem("Profile", Icons.Default.Person, "profile")
     )
 
@@ -97,7 +90,10 @@ fun MainScreen() {
         NavHost(navController, startDestination = "home", modifier = Modifier.padding(innerPadding)) {
             composable("home") { PageContent("Home", "Selamat Datang di Aplikasi IoT") }
             composable("dashboard") { DashboardScreen() }
-            composable("grafik") { GrafikScreen() } // Route Baru
+
+            // GrafikScreen sekarang dipanggil dari SensorChart.kt
+            composable("grafik") { GrafikScreen() }
+
             composable("profile") { PageContent("Profile", "Anggota Kelompok 7") }
         }
     }
@@ -145,7 +141,7 @@ fun DashboardScreen() {
         })
     }
 
-    // --- UI DASHBOARD (Tanpa Grafik) ---
+    // --- UI DASHBOARD ---
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -187,54 +183,6 @@ fun DashboardScreen() {
 }
 
 @Composable
-fun GrafikScreen() {
-    // --- STATES GRAFIK ---
-    val historyList = remember { mutableStateListOf<Float>() }
-
-    val database = Firebase.database("https://uaskelompok7-a8d53-default-rtdb.asia-southeast1.firebasedatabase.app")
-    val historyRef = database.getReference("IOT/history")
-
-    LaunchedEffect(Unit) {
-        // Listener Riwayat Data (Grafik) - Ambil 20 data terakhir
-        historyRef.limitToLast(20).addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                historyList.clear()
-                for (child in snapshot.children) {
-                    val `val` = child.child("val").getValue(Double::class.java)
-                    val valLong = child.child("val").getValue(Long::class.java)
-                    val finalVal = `val`?.toFloat() ?: valLong?.toFloat() ?: 0f
-                    historyList.add(finalVal)
-                }
-            }
-            override fun onCancelled(error: DatabaseError) {}
-        })
-    }
-
-    // --- UI GRAFIK ---
-    Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("Grafik Riwayat (Realtime)", fontWeight = FontWeight.Bold, fontSize = 20.sp)
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(300.dp) // Tinggi grafik sedikit diperbesar agar lebih jelas
-                .background(Color(0xFFF5F5F5), RoundedCornerShape(8.dp))
-                .padding(8.dp)
-        ) {
-            if (historyList.isNotEmpty()) {
-                SimpleLineChart(dataPoints = historyList)
-            } else {
-                Text("Belum ada data...", modifier = Modifier.align(Alignment.Center))
-            }
-        }
-    }
-}
-
-@Composable
 fun ControlCard(title: String, isActive: Boolean, onToggle: (Boolean) -> Unit) {
     Card(
         modifier = Modifier.width(160.dp),
@@ -255,42 +203,6 @@ fun ControlCard(title: String, isActive: Boolean, onToggle: (Boolean) -> Unit) {
 }
 
 @Composable
-fun SimpleLineChart(dataPoints: List<Float>) {
-    if (dataPoints.isEmpty()) return
-
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        val width = size.width
-        val height = size.height
-        val maxVal = (dataPoints.maxOrNull() ?: 100f) * 1.2f // Skala atas + 20%
-
-        val path = Path()
-        val stepX = width / (dataPoints.size - 1).coerceAtLeast(1)
-
-        dataPoints.forEachIndexed { index, value ->
-            // Normalisasi Y (0 di bawah, height di atas canvas)
-            val x = index * stepX
-            val y = height - ((value / maxVal) * height)
-
-            if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
-
-            // Gambar titik data
-            drawCircle(
-                color = Color.Blue,
-                radius = 6f,
-                center = Offset(x, y)
-            )
-        }
-
-        // Gambar Garis
-        drawPath(
-            path = path,
-            color = Color(0xFF6200EE),
-            style = Stroke(width = 5f)
-        )
-    }
-}
-
-@Composable
 fun PageContent(title: String, description: String) {
     Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(title, fontSize = 24.sp, fontWeight = FontWeight.Bold)
@@ -305,4 +217,3 @@ fun MainScreenPreview() {
         MainScreen()
     }
 }
-
