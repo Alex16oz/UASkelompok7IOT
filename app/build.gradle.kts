@@ -54,6 +54,8 @@ dependencies {
     implementation(libs.firebase.analytics)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.firebase.database)
+    implementation(libs.vico.compose.m3)
+    implementation(libs.vico.core)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
