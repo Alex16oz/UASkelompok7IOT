@@ -2,7 +2,7 @@ package UAS.kelompok7.com
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+// import androidx.compose.foundation.shape.RoundedCornerShape // Tidak diperlukan lagi untuk full width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -46,7 +46,7 @@ fun GrafikScreen() {
 
     LaunchedEffect(Unit) {
         // Listener Riwayat Data - Ambil 10-20 data terakhir agar grafik rapi
-        historyRef.limitToLast(10).addValueEventListener(object : ValueEventListener {
+        historyRef.limitToLast(15).addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 historyList.clear()
                 for (child in snapshot.children) {
@@ -70,18 +70,27 @@ fun GrafikScreen() {
 
     // --- UI GRAFIK ---
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        // PERUBAHAN 1: Hapus padding agar konten bisa mentok ke pinggir layar
+        modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Grafik Realtime (Waktu & Persen)", fontWeight = FontWeight.Bold, fontSize = 20.sp)
-        Spacer(modifier = Modifier.height(16.dp))
+        // PERUBAHAN 2: Tambahkan padding manual ke judul agar tidak menempel di pinggir
+        Text(
+            text = "Grafik Realtime (Waktu & Persen)",
+            fontWeight = FontWeight.Bold,
+            fontSize = 20.sp,
+            modifier = Modifier.padding(16.dp)
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         Box(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxWidth() // Memenuhi lebar layar
                 .height(350.dp)
-                .background(Color(0xFFFFFFFF), RoundedCornerShape(8.dp))
-                .padding(8.dp)
+                // PERUBAHAN 3: Background putih kotak (tanpa rounded corner)
+                .background(Color(0xFFFFFFFF))
+                .padding(8.dp) // Padding dalam agar label sumbu grafik tidak terpotong layar
         ) {
             if (historyList.isNotEmpty()) {
                 SensorChartVico(dataPoints = historyList)
@@ -127,8 +136,6 @@ fun SensorChartVico(dataPoints: List<SensorData>) {
         startAxis = rememberStartAxis(
             title = "Ketinggian (%)",
             valueFormatter = startAxisFormatter,
-            // Opsional: Jika ingin memaksa visualisasi 0 sampai 100
-            // itemPlacer = AxisItemPlacer.Vertical.default(maxItemCount = 6)
         ),
 
         // Konfigurasi Sumbu X (Bawah)
