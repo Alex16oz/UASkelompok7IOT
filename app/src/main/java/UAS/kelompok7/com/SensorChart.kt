@@ -3,6 +3,7 @@ package UAS.kelompok7.com
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 // import androidx.compose.foundation.shape.RoundedCornerShape // Tidak diperlukan lagi untuk full width
+import androidx.compose.material3.MaterialTheme // PERUBAHAN: Tambahkan import ini
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -88,8 +89,8 @@ fun GrafikScreen() {
             modifier = Modifier
                 .fillMaxWidth() // Memenuhi lebar layar
                 .height(350.dp)
-                // PERUBAHAN 3: Background putih kotak (tanpa rounded corner)
-                .background(Color(0xFFFFFFFF))
+                // PERUBAHAN 3 (FIX DARK MODE): Gunakan warna surface dari tema, bukan hardcode putih
+                .background(MaterialTheme.colorScheme.surface)
                 .padding(8.dp) // Padding dalam agar label sumbu grafik tidak terpotong layar
         ) {
             if (historyList.isNotEmpty()) {
