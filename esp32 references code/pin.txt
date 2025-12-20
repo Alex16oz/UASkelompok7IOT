@@ -1,0 +1,25 @@
+    load cell
+Red	    Excitation + (Power)	E+ or VCC	E+
+Black	Excitation - (Ground)	E- or GND	E-
+Green	Signal + (Output)	S+ or O+	A+
+White	Signal - (Output)	S- or O-	A-
+
+-----------------------------------------------------------
+    HX711 amplifier module
+VCC	3V3	            purple
+GND	GND	            Black
+DT  (Data)	19      white
+SCK (Clock) 18      grey
+
+----------------------------------------------------------
+    HC-SR04
+VCC	VIN (5V)
+GND	GND	Common ground.
+trig  Pin(23, Pin.OUT)
+echo  Pin(22, Pin.IN)
+
+----------------------------------------------------------
+    Servo Motor
+Signal (PWM)	Orange / Yellow	GPIO 21	Control signal.
+VCC	Red	VIN (5V)	Important: Servos usually need 5V. Do not use 3.3V.
+GND	Brown / Black	GND	Connect to common ground.
